@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../services/booking_service.dart';
+import '../services/api_service.dart';
 import '../models/booking.dart';
+import '../models/event.dart';
 import '../providers/auth_provider.dart';
 import 'booking_detail_screen.dart';
 
@@ -15,6 +17,7 @@ class BookingsScreen extends StatefulWidget {
 
 class _BookingsScreenState extends State<BookingsScreen> {
   List<Booking> bookings = [];
+  List<Event> joinedEvents = []; // Events that student has joined
   bool isLoading = true;
   String? error;
   String filter = 'all'; // 'all', 'pending', 'approved', 'cancelled'
@@ -28,7 +31,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
   Future<void> _loadBookings() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final bookingService = Provider.of<BookingService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
     final userId = authProvider.currentUser?.id;
+    final isStudent = authProvider.currentUser?.isStudent == true;
 
     if (userId == null) {
       setState(() {
@@ -44,7 +49,25 @@ class _BookingsScreenState extends State<BookingsScreen> {
         error = null;
       });
 
+      // Set token if available
+      if (authProvider.token != null) {
+        bookingService.setToken(authProvider.token!);
+        apiService.setToken(authProvider.token!);
+      }
+
+      // Load bookings
       final fetchedBookings = await bookingService.getUserBookings(userId);
+
+      // Load joined events if student
+      List<Event> fetchedEvents = [];
+      if (isStudent) {
+        try {
+          fetchedEvents = await apiService.getMyEvents();
+        } catch (e) {
+          // Ignore error if API fails, just show bookings
+          debugPrint('Failed to load joined events: $e');
+        }
+      }
 
       // Filter bookings
       List<Booking> filteredBookings = fetchedBookings;
@@ -56,6 +79,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
 
       setState(() {
         bookings = filteredBookings;
+        joinedEvents = fetchedEvents;
         isLoading = false;
       });
     } catch (e) {
@@ -64,6 +88,23 @@ class _BookingsScreenState extends State<BookingsScreen> {
         isLoading = false;
       });
     }
+  }
+
+  // Convert Event to Booking-like object for display
+  Booking _eventToBooking(Event event) {
+    return Booking(
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startTime: event.startTime ?? '',
+      endTime: event.endTime ?? '',
+      status: 'EVENT_JOINED', // Special status for joined events
+      labId: event.labId,
+      labName: event.labName,
+      userId: event.userId,
+      userName: event.userFullName, // Use userName instead of userFullName
+      createdAt: event.createdAt,
+    );
   }
 
   @override
@@ -146,7 +187,13 @@ class _BookingsScreenState extends State<BookingsScreen> {
       );
     }
 
-    if (bookings.isEmpty) {
+    // Combine bookings and joined events
+    List<Booking> allItems = List.from(bookings);
+    if (joinedEvents.isNotEmpty) {
+      allItems.addAll(joinedEvents.map((e) => _eventToBooking(e)));
+    }
+
+    if (allItems.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -163,10 +210,11 @@ class _BookingsScreenState extends State<BookingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Đặt lịch phòng lab để bắt đầu',
+              'Đặt lịch phòng lab hoặc tham gia sự kiện để bắt đầu',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -177,9 +225,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
       onRefresh: _loadBookings,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: bookings.length,
+        itemCount: allItems.length,
         itemBuilder: (context, index) {
-          final booking = bookings[index];
+          final booking = allItems[index];
           return _buildBookingCard(booking);
         },
       ),
@@ -210,6 +258,10 @@ class _BookingsScreenState extends State<BookingsScreen> {
       case 'COMPLETED':
         statusColor = Colors.blue;
         statusIcon = Icons.done_all;
+        break;
+      case 'EVENT_JOINED':
+        statusColor = Colors.purple;
+        statusIcon = Icons.event;
         break;
       default:
         statusColor = Colors.grey;

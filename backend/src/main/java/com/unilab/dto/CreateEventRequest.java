@@ -14,13 +14,12 @@ public class CreateEventRequest {
     @Size(max = 500, message = "Description must not exceed 500 characters")
     private String description;
 
-    @NotNull(message = "Start time is required")
+    // Start time and end time are optional - will be set when teacher books a lab
     private OffsetDateTime startTime;
 
-    @NotNull(message = "End time is required")
     private OffsetDateTime endTime;
 
-    @NotNull(message = "Lab ID is required")
+    // Lab ID is optional - event can be created without lab, lab can be assigned later
     private Long labId;
     
     public String getTitle() {

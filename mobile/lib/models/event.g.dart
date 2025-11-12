@@ -9,13 +9,15 @@ part of 'event.dart';
 Event _$EventFromJson(Map<String, dynamic> json) => Event(
       id: (json['id'] as num).toInt(),
       title: json['title'] as String,
-      description: json['description'] as String,
-      startTime: json['startTime'] as String,
-      endTime: json['endTime'] as String,
+      description: json['description'] as String?,
+      startTime: json['startTime'] as String?,
+      endTime: json['endTime'] as String?,
+      userId: (json['userId'] as num?)?.toInt(),
+      userFullName: json['userFullName'] as String?,
+      labId: (json['labId'] as num?)?.toInt(),
+      labName: json['labName'] as String?,
       status: json['status'] as String,
-      location: json['location'] as String,
-      capacity: (json['capacity'] as num).toInt(),
-      bookedCount: (json['bookedCount'] as num).toInt(),
+      createdAt: json['createdAt'] as String?,
     );
 
 Map<String, dynamic> _$EventToJson(Event instance) => <String, dynamic>{
@@ -24,8 +26,10 @@ Map<String, dynamic> _$EventToJson(Event instance) => <String, dynamic>{
       'description': instance.description,
       'startTime': instance.startTime,
       'endTime': instance.endTime,
+      'userId': instance.userId,
+      'userFullName': instance.userFullName,
+      'labId': instance.labId,
+      'labName': instance.labName,
       'status': instance.status,
-      'location': instance.location,
-      'capacity': instance.capacity,
-      'bookedCount': instance.bookedCount,
+      'createdAt': instance.createdAt,
     };

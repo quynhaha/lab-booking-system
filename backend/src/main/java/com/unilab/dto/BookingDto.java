@@ -43,6 +43,9 @@ public class BookingDto {
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private String categoryName;
 
+    @Schema(description = "Existing event ID to link with this booking", example = "12")
+    private Long eventId;
+
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private String title;
 
@@ -232,6 +235,14 @@ public class BookingDto {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public Integer getParticipantsCount() {

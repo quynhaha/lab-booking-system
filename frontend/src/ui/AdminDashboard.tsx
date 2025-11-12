@@ -49,7 +49,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     totalCapacity: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'schedules'>('labs');
+  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'schedules' | 'events'>('labs');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
@@ -69,6 +69,19 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     status: 'AVAILABLE',
     facilities: '',
   });
+  
+  // Events state
+  const [events, setEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showRejectEventModal, setShowRejectEventModal] = useState(false);
+  const [eventToReject, setEventToReject] = useState<any | null>(null);
+  const [rejectEventReason, setRejectEventReason] = useState('');
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    labId: 0,
+  });
 
   useEffect(() => {
     fetchDashboardData();
@@ -77,6 +90,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
   useEffect(() => {
     if (activeTab === 'bookings') {
       fetchBookings();
+    } else if (activeTab === 'events') {
+      fetchEvents();
     }
   }, [activeTab]);
 
@@ -307,6 +322,130 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     }
   };
 
+  // Events functions
+  const fetchEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/events`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const handleApproveEvent = async (eventId: number) => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/events/${eventId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to approve event');
+      }
+
+      alert('Event approved successfully!');
+      fetchEvents(); // Refresh events list
+    } catch (error) {
+      console.error('Error approving event:', error);
+      alert('Failed to approve event. Please try again.');
+    }
+  };
+
+  const handleRejectEvent = (event: any) => {
+    setEventToReject(event);
+    setShowRejectEventModal(true);
+  };
+
+  const confirmRejectEvent = async () => {
+    if (!eventToReject) {
+      return;
+    }
+
+    try {
+      const reason = rejectEventReason.trim() || 'Rejected by admin';
+      const response = await fetch(
+        `${apiBaseUrl}/api/events/${eventToReject.id}/reject?reason=${encodeURIComponent(reason)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to reject event');
+      }
+
+      alert('Event rejected successfully!');
+      setShowRejectEventModal(false);
+      setEventToReject(null);
+      setRejectEventReason('');
+      fetchEvents(); // Refresh events list
+    } catch (error) {
+      console.error('Error rejecting event:', error);
+      alert('Failed to reject event. Please try again.');
+    }
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newEvent.title.trim()) {
+      alert('Please fill in event title');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/events`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newEvent.title,
+          description: newEvent.description || null,
+          labId: newEvent.labId && newEvent.labId > 0 ? newEvent.labId : null,
+          startTime: null,
+          endTime: null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create event');
+      }
+
+      alert('Event created successfully!');
+      setShowAddEventModal(false);
+      setNewEvent({
+        title: '',
+        description: '',
+        labId: 0,
+        startTime: '',
+        endTime: '',
+      });
+      fetchEvents(); // Refresh events list
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      alert(error.message || 'Failed to create event. Please try again.');
+    }
+  };
+
   return (
     <div className="ad-page">
       <header className="ad-topbar">
@@ -336,6 +475,12 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
             onClick={() => setActiveTab('schedules')}
           >
             Schedules
+          </button>
+          <button 
+            className={`ad-nav-btn ${activeTab === 'events' ? 'active' : ''}`}
+            onClick={() => setActiveTab('events')}
+          >
+            Events
           </button>
         </nav>
         <div className="ad-right">
@@ -391,11 +536,24 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
             >
               Schedules
             </button>
+            <button 
+              className={`tab ${activeTab === 'events' ? 'active' : ''}`}
+              onClick={() => setActiveTab('events')}
+            >
+              Events
+            </button>
           </div>
           <div className="ad-add">
-            <button className="btn-add" onClick={() => setShowAddModal(true)}>
-              + Add Lab
-            </button>
+            {activeTab === 'labs' && (
+              <button className="btn-add" onClick={() => setShowAddModal(true)}>
+                + Add Lab
+              </button>
+            )}
+            {activeTab === 'events' && (
+              <button className="btn-add" onClick={() => setShowAddEventModal(true)}>
+                + Create Event
+              </button>
+            )}
           </div>
         </section>
 
@@ -512,6 +670,61 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               <p className="muted">Create and manage recurring lab schedules for classes.</p>
             </div>
         </section>
+        )}
+
+        {activeTab === 'events' && (
+          <section className="ad-grid">
+            {loadingEvents ? (
+              <div className="loading-message">Loading events...</div>
+            ) : events.length === 0 ? (
+              <div className="empty-message">No events found. Events can only be created by Teachers.</div>
+            ) : (
+              events.map((event) => (
+                <div key={event.id} className="ad-card">
+                  <div className="ad-card-head">
+                    <div>
+                      <div className="ad-lab-name">{event.title}</div>
+                      <div className="ad-lab-loc">{event.labName || `Lab ID: ${event.labId}`}</div>
+                    </div>
+                    <div className={`ad-badge ${
+                      event.status === 'PENDING' ? 'pending' : 
+                      event.status === 'APPROVED' ? 'avail' : 
+                      'unavail'
+                    }`}>
+                      {event.status}
+                    </div>
+                  </div>
+                  {event.description && (
+                    <p className="ad-desc">{event.description}</p>
+                  )}
+                  <div className="ad-meta">
+                    <div>Start: {new Date(event.startTime).toLocaleString()}</div>
+                    <div>End: {new Date(event.endTime).toLocaleString()}</div>
+                    {event.userFullName && (
+                      <div>Created by: {event.userFullName}</div>
+                    )}
+                  </div>
+                  {event.status === 'PENDING' && (
+                    <div className="ad-actions-row">
+                      <button 
+                        className="btn-view"
+                        onClick={() => handleApproveEvent(event.id)}
+                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none' }}
+                      >
+                        ✓ Approve
+                      </button>
+                      <button 
+                        className="btn-delete"
+                        onClick={() => handleRejectEvent(event)}
+                      >
+                        ✗ Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </section>
         )}
       </main>
 
@@ -726,6 +939,124 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                 Create Lab
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Event Modal */}
+      {showRejectEventModal && eventToReject && (
+        <div className="modal-overlay" onClick={() => setShowRejectEventModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>⚠️ Reject Event</h3>
+              <button className="modal-close" onClick={() => setShowRejectEventModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to reject event <strong>{eventToReject.title}</strong>?</p>
+              <p className="warning-text">The teacher will be notified.</p>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Rejection Reason *</label>
+                <textarea
+                  placeholder="Please provide a reason for rejection..."
+                  value={rejectEventReason}
+                  onChange={(e) => setRejectEventReason(e.target.value)}
+                  rows={4}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={() => {
+                  setShowRejectEventModal(false);
+                  setRejectEventReason('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-delete-confirm" 
+                onClick={confirmRejectEvent}
+              >
+                Reject Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Event Modal */}
+      {showAddEventModal && (
+        <div className="modal-overlay" onClick={() => setShowAddEventModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create New Event</h3>
+              <button className="modal-close" onClick={() => setShowAddEventModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleCreateEvent}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Event Title *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Java Programming Workshop"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    placeholder="Describe the event..."
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Lab (Optional)</label>
+                  <select
+                    value={newEvent.labId || 0}
+                    onChange={(e) => setNewEvent({...newEvent, labId: parseInt(e.target.value) || 0})}
+                  >
+                    <option value={0}>No lab assigned (can assign later)</option>
+                    {labs.map((lab) => (
+                      <option key={lab.id} value={lab.id}>
+                        {lab.name} - {lab.building} {lab.room}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{color: '#666', fontSize: '12px'}}>
+                    Note: Time will be set when teacher books a lab for this event
+                  </small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button"
+                  className="btn-cancel" 
+                  onClick={() => {
+                    setShowAddEventModal(false);
+                    setNewEvent({
+                      title: '',
+                      description: '',
+                      labId: 0,
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="btn-submit" 
+                  disabled={!newEvent.title.trim()}
+                >
+                  Create Event
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

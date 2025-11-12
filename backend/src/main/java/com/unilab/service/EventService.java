@@ -37,26 +37,31 @@ public class EventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Check if lab exists
-        Lab lab = labRepository.findById(request.getLabId())
-                .orElseThrow(() -> new IllegalArgumentException("Lab not found"));
+        // Lab is optional - check if lab exists only if labId is provided
+        Lab lab = null;
+        if (request.getLabId() != null) {
+            lab = labRepository.findById(request.getLabId())
+                    .orElseThrow(() -> new IllegalArgumentException("Lab not found"));
 
-        // Check for time conflicts
-        List<Event> conflictingEvents = eventRepository.findConflictingEvents(
-                request.getLabId(), request.getStartTime(), request.getEndTime());
-        
-        if (!conflictingEvents.isEmpty()) {
-            throw new IllegalArgumentException("Time conflict: Lab is already booked during this time period");
+            // Check for time conflicts only if lab and times are provided
+            if (request.getStartTime() != null && request.getEndTime() != null) {
+                List<Event> conflictingEvents = eventRepository.findConflictingEvents(
+                        request.getLabId(), request.getStartTime(), request.getEndTime());
+                
+                if (!conflictingEvents.isEmpty()) {
+                    throw new IllegalArgumentException("Time conflict: Lab is already booked during this time period");
+                }
+            }
         }
 
         // Create new event
         Event event = new Event();
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
-        event.setStartTime(request.getStartTime());
-        event.setEndTime(request.getEndTime());
+        event.setStartTime(request.getStartTime()); // Can be null
+        event.setEndTime(request.getEndTime()); // Can be null
         event.setUser(user);
-        event.setLab(lab);
+        event.setLab(lab); // Can be null
         event.setStatus("PENDING");
         event.setIsPrivate(false);
         event.setInvitees(null);
@@ -87,20 +92,60 @@ public class EventService {
         return convertToEventResponse(event);
     }
 
+    // Get pending events (for admin approval)
+    public List<EventResponse> getPendingEvents() {
+        List<Event> events = eventRepository.findAll().stream()
+                .filter(e -> "PENDING".equalsIgnoreCase(e.getStatus()))
+                .collect(Collectors.toList());
+        return events.stream()
+                .map(this::convertToEventResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Approve event (Admin only)
+    public EventResponse approveEvent(Long eventId, String adminEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        if (!"PENDING".equalsIgnoreCase(event.getStatus())) {
+            throw new IllegalStateException("Only PENDING events can be approved");
+        }
+
+        event.setStatus("APPROVED");
+        Event savedEvent = eventRepository.save(event);
+        return convertToEventResponse(savedEvent);
+    }
+
+    // Reject event (Admin only)
+    public EventResponse rejectEvent(Long eventId, String reason, String adminEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        if (!"PENDING".equalsIgnoreCase(event.getStatus())) {
+            throw new IllegalStateException("Only PENDING events can be rejected");
+        }
+
+        event.setStatus("REJECTED");
+        Event savedEvent = eventRepository.save(event);
+        return convertToEventResponse(savedEvent);
+    }
+
     private void validateEventRequest(CreateEventRequest request) {
-        // Validate time logic
-        if (request.getStartTime().isAfter(request.getEndTime())) {
-            throw new IllegalArgumentException("Start time must be before end time");
-        }
+        // Validate time logic only if both startTime and endTime are provided
+        if (request.getStartTime() != null && request.getEndTime() != null) {
+            if (request.getStartTime().isAfter(request.getEndTime())) {
+                throw new IllegalArgumentException("Start time must be before end time");
+            }
 
-        // Validate that event is not in the past
-        if (request.getStartTime().isBefore(OffsetDateTime.now())) {
-            throw new IllegalArgumentException("Cannot create events in the past");
-        }
+            // Validate that event is not in the past
+            if (request.getStartTime().isBefore(OffsetDateTime.now())) {
+                throw new IllegalArgumentException("Cannot create events in the past");
+            }
 
-        // Validate minimum duration (e.g., 30 minutes)
-        if (request.getStartTime().plusMinutes(30).isAfter(request.getEndTime())) {
-            throw new IllegalArgumentException("Event duration must be at least 30 minutes");
+            // Validate minimum duration (e.g., 30 minutes)
+            if (request.getStartTime().plusMinutes(30).isAfter(request.getEndTime())) {
+                throw new IllegalArgumentException("Event duration must be at least 30 minutes");
+            }
         }
     }
 
@@ -139,8 +184,8 @@ public class EventService {
                 event.getEndTime(),
                 event.getUser().getId(),
                 event.getUser().getFullName(),
-                event.getLab().getId(),
-                event.getLab().getName(),
+                event.getLab() != null ? event.getLab().getId() : null,
+                event.getLab() != null ? event.getLab().getName() : null,
                 event.getStatus(),
                 event.getCreatedAt()
         );

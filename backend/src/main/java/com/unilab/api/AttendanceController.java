@@ -34,7 +34,7 @@ public class AttendanceController {
 
     // Get all attendance records
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get all attendance records", description = "Retrieve all attendance data")
     public ResponseEntity<List<AttendanceDto>> getAllAttendance() {
         return ResponseEntity.ok(attendanceService.getAllAttendances());
@@ -42,7 +42,7 @@ public class AttendanceController {
 
     // Get attendance by id
     @GetMapping("/{attendanceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Get attendance by booking", description = "Retrieve all attendance records for a specific booking")
     public ResponseEntity<AttendanceDto> getAttendanceById(@Parameter(name = "attendanceId", description = "ID of the booking", required = true) @PathVariable("attendanceId") Long attendanceId) {
         return ResponseEntity.ok(attendanceService.getAttendanceById(attendanceId));
@@ -50,7 +50,7 @@ public class AttendanceController {
 
     // Create attendance (manual or system update)
     @PostMapping("/")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Create attendance record (create manually if mistake occur)", description = "Create attendance record for a booking and user")
     public ResponseEntity<AttendanceDto> createAttendance(@Valid @RequestBody CreateAttendanceDto createAttendanceDto) {
         return ResponseEntity.ok(attendanceService.createAttendance(createAttendanceDto));
@@ -58,7 +58,7 @@ public class AttendanceController {
 
     // Create attendance (manual or system update)
     @PutMapping("/{attendanceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Update attendance record", description = "Update attendance record for a booking and user")
     public ResponseEntity<AttendanceDto> updateAttendance(@Parameter(name = "attendanceId", description = "ID of the attendance", required = true) @PathVariable("attendanceId") Long attendanceId, @Valid @RequestBody UpdateAttendanceDto updateAttendanceDto) {
         return ResponseEntity.ok(attendanceService.updateAttendance(attendanceId, updateAttendanceDto));
@@ -66,7 +66,7 @@ public class AttendanceController {
 
     // Create attendance (manual or system update)
     @DeleteMapping("/{attendanceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     @Operation(summary = "Delete attendance record", description = "Delete attendance record for a booking and user")
     public ResponseEntity<AttendanceDto> deleteAttendance(@Parameter(name = "attendanceId", description = "ID of the attendance", required = true) @PathVariable("attendanceId") Long attendanceId) {
         return ResponseEntity.ok(attendanceService.deleteAttendance(attendanceId));
@@ -74,7 +74,7 @@ public class AttendanceController {
 
     // Check in / out attendance
     @PostMapping("/check")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     @Operation(summary = "Check an attendance record both for check in and check out", description = "Check an attendance record for a booking and user")
     public ResponseEntity<AttendanceDto> checkAttendance(@Valid @RequestBody CheckAttendanceDto checkAttendanceDto) {
         return ResponseEntity.ok(attendanceService.checkAttendance(checkAttendanceDto));
@@ -82,7 +82,7 @@ public class AttendanceController {
 
     // Self-view attendance (for logged in user) base booking id
     @GetMapping("/booking/{bookingId}/me")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     @Operation(summary = "Get my attendance records", description = "Retrieve attendance records for the logged-in user and selected booking")
     public ResponseEntity<AttendanceDto> getMyAttendance(Authentication authentication, @Parameter(name = "bookingId", description = "ID of the booking", required = true) @PathVariable("bookingId") Long bookingId) {
         String email = authentication.getName();

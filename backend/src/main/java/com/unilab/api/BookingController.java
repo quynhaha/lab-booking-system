@@ -103,19 +103,6 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.createBooking(dto, userId));
     }
 
-    // Attach event to booking
-    @PostMapping("/{id}/events")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    @Operation(summary = "Attach an event to a booking", description = "Link an existing event to a booking")
-    public ResponseEntity<BookingEventDto> attachEventToBooking(
-            @PathVariable("id") Long bookingId,
-            @Valid @RequestBody AttachEventRequest request,
-            Authentication authentication
-    ) {
-        BookingEventDto dto = bookingEventService.attachEventToBooking(bookingId, request, authentication.getName());
-        return ResponseEntity.ok(dto);
-    }
-
     // Get all booking-event links
     @GetMapping("/events")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
@@ -123,16 +110,6 @@ public class BookingController {
     public ResponseEntity<List<BookingEventDto>> getAllBookingEvents() {
         return ResponseEntity.ok(bookingEventService.getAllBookingEvents());
     }
-
-    // Detach event
-    @DeleteMapping("/{id}/events")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    @Operation(summary = "Detach event from booking", description = "Remove linked event from a booking")
-    public ResponseEntity<Void> detachEventFromBooking(@PathVariable("id") Long bookingId) {
-        bookingEventService.detachEventFromBooking(bookingId);
-        return ResponseEntity.noContent().build();
-    }
-
 
     // Cancel booking
     @PutMapping("/cancel")

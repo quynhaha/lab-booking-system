@@ -3,6 +3,9 @@ package com.unilab.service;
 import com.unilab.dto.LabDto;
 import com.unilab.model.Lab;
 import com.unilab.repository.LabRepository;
+import com.unilab.repository.EquipmentRepository;
+import com.unilab.repository.EventRepository;
+import com.unilab.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,15 @@ public class LabService {
 
     @Autowired
     private LabRepository labRepository;
+
+    @Autowired
+    private EquipmentRepository equipmentRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
 
     // Get all labs
     public List<LabDto> getAllLabs() {
@@ -80,9 +92,26 @@ public class LabService {
     // Delete lab
     @Transactional
     public void deleteLab(Long id) {
-        if (!labRepository.existsById(id)) { // ✅ added
+        if (!labRepository.existsById(id)) {
             throw new RuntimeException("Lab not found with id: " + id);
         }
+        
+        // Delete all equipment associated with this lab first
+        equipmentRepository.findByLabId(id).forEach(equipment -> {
+            equipmentRepository.delete(equipment);
+        });
+        
+        // Delete all events associated with this lab
+        eventRepository.findByLabId(id).forEach(event -> {
+            eventRepository.delete(event);
+        });
+        
+        // Delete all bookings associated with this lab
+        bookingRepository.findByLabId(id).forEach(booking -> {
+            bookingRepository.delete(booking);
+        });
+        
+        // Now delete the lab
         labRepository.deleteById(id);
     }
 

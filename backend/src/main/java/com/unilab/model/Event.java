@@ -24,12 +24,11 @@ public class Event {
     @Column(name = "description", length = 500)
     private String description;
 
-    @NotNull(message = "Start time is required")
-    @Column(name = "start_time", nullable = false)
+    // Start time and end time are optional - will be set when teacher books a lab
+    @Column(name = "start_time", nullable = true)
     private OffsetDateTime startTime;
 
-    @NotNull(message = "End time is required")
-    @Column(name = "end_time", nullable = false)
+    @Column(name = "end_time", nullable = true)
     private OffsetDateTime endTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,7 +36,7 @@ public class Event {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lab_id", nullable = false)
+    @JoinColumn(name = "lab_id", nullable = true)
     private Lab lab;
 
     @Column(name = "status", length = 20)

@@ -47,7 +47,7 @@ public class AppConstants {
     
     // User Roles
     public static final String ROLE_ADMIN = "ADMIN";
-    public static final String ROLE_STAFF = "STAFF";
+    public static final String ROLE_TEACHER = "TEACHER";
     public static final String ROLE_STUDENT = "STUDENT";
     
     // Rule Types
@@ -60,7 +60,7 @@ public class AppConstants {
     // Rule Applies To
     public static final String APPLIES_TO_ALL = "ALL";
     public static final String APPLIES_TO_STUDENT = "STUDENT";
-    public static final String APPLIES_TO_STAFF = "STAFF";
+    public static final String APPLIES_TO_TEACHER = "TEACHER";
     
     // Refund Calculation
     public static final double REFUND_RATE_FULL = 1.0;

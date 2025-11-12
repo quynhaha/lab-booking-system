@@ -3,15 +3,19 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/lab.dart';
 import '../models/lab_booking_slot.dart';
+import '../models/event.dart';
 import '../services/booking_service.dart';
+import '../services/api_service.dart';
 import '../providers/auth_provider.dart';
 
 class BookingCreateScreen extends StatefulWidget {
   final Lab lab;
+  final Event? event; // Optional: If provided, this event will be pre-selected
 
   const BookingCreateScreen({
     super.key,
     required this.lab,
+    this.event,
   });
 
   @override
@@ -28,6 +32,11 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
   int? _selectedSlot; // 1-4
   bool _isLoading = false;
   
+  // Event selection
+  List<Event> _events = [];
+  Event? _selectedEvent;
+  bool _isLoadingEvents = false;
+  
   // Slot definitions
   static const Map<int, Map<String, String>> _slots = {
     1: {'name': 'Slot 1', 'time': '08:00 - 11:00'},
@@ -35,6 +44,18 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
     3: {'name': 'Slot 3', 'time': '14:00 - 17:00'},
     4: {'name': 'Slot 4', 'time': '17:00 - 20:00'},
   };
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select event if provided
+    if (widget.event != null) {
+      _selectedEvent = widget.event;
+      // Add to events list if not already there
+      _events = [widget.event!];
+    }
+    _loadEvents();
+  }
 
   @override
   void dispose() {
@@ -83,6 +104,60 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _loadEvents() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Only load events if user is TEACHER (STUDENT cannot select events)
+    if (authProvider.currentUser == null || !authProvider.currentUser!.isTeacher) {
+      setState(() {
+        _isLoadingEvents = false;
+        _events = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingEvents = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      
+      // Set token if available
+      if (authProvider.token != null) {
+        apiService.setToken(authProvider.token!);
+      }
+      
+      // Use getAvailableEvents() to get only APPROVED events
+      // Don't filter by labId - teacher can book any lab for an event
+      final events = await apiService.getAvailableEvents();
+      
+      setState(() {
+        // If we have a pre-selected event, make sure it's in the list
+        if (widget.event != null) {
+          final eventIds = events.map((e) => e.id).toSet();
+          if (!eventIds.contains(widget.event!.id)) {
+            _events = [widget.event!, ...events];
+          } else {
+            _events = events;
+            // Re-select the event from the loaded list
+            _selectedEvent = events.firstWhere((e) => e.id == widget.event!.id);
+          }
+        } else {
+          _events = events;
+        }
+        _isLoadingEvents = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingEvents = false;
+        _events = [];
+      });
+      // Silently fail - events are optional
+      debugPrint('Failed to load events: $e');
+    }
+  }
+
   Future<void> _submitBooking() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -102,12 +177,15 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
       return;
     }
 
+    // Build description (no need to embed event ID anymore, we'll send it separately)
+    String? description = _descriptionController.text.trim().isEmpty 
+        ? null 
+        : _descriptionController.text.trim();
+
     final labSlot = LabBookingSlot(
       labId: widget.lab.id,
       title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty 
-          ? null 
-          : _descriptionController.text.trim(),
+      description: description,
       participantsCount: int.parse(_participantsController.text.trim()),
       slotNumber: _selectedSlot,
       bookingDate: _formatDateForApi(_selectedDate!),
@@ -119,13 +197,24 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
 
     try {
       final bookingService = context.read<BookingService>();
-      await bookingService.createBooking([labSlot]);
+      // Pass eventId directly to createBooking (only if TEACHER selected an event)
+      final bookings = await bookingService.createBooking(
+        [labSlot],
+        eventId: _selectedEvent?.id,
+      );
 
       if (mounted) {
+        // If event is selected, show confirmation message
+        String message = 'Đặt lịch thành công!';
+        if (_selectedEvent != null) {
+          message += '\nSự kiện "${_selectedEvent!.title}" đã được liên kết với đặt lịch này.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đặt lịch thành công!'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
         Navigator.of(context).pop(true); // Return true to indicate success
@@ -312,6 +401,79 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Event Selection (Optional - Only for TEACHER)
+              if (Provider.of<AuthProvider>(context).currentUser?.isTeacher == true) ...[
+                if (widget.event != null) ...[
+                  // Show info banner if event was pre-selected
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đang book lab cho sự kiện: "${widget.event!.title}"',
+                            style: TextStyle(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (!_isLoadingEvents && _events.isNotEmpty) ...[
+                  Text(
+                    widget.event != null 
+                      ? 'Sự kiện đã chọn (có thể đổi)' 
+                      : 'Chọn sự kiện (không bắt buộc)',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                DropdownButtonFormField<Event>(
+                  value: _selectedEvent,
+                  decoration: const InputDecoration(
+                    labelText: 'Sự kiện',
+                    hintText: 'Chọn sự kiện (nếu có)',
+                    prefixIcon: Icon(Icons.event),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<Event>(
+                      value: null,
+                      child: Text('Không chọn sự kiện'),
+                    ),
+                    ..._events.map((event) {
+                      return DropdownMenuItem<Event>(
+                        value: event,
+                        child: Text(
+                          event.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }),
+                  ],
+                  onChanged: (Event? value) {
+                    setState(() {
+                      _selectedEvent = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+              ],
 
               // Slot Selection
               Text(

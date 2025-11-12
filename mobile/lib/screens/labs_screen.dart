@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/lab_service.dart';
 import '../models/lab.dart';
+import '../models/event.dart';
+import '../utils/event_selection_helper.dart';
 import 'lab_detail_screen.dart';
 import 'booking_create_screen.dart';
 
@@ -18,11 +20,32 @@ class _LabsScreenState extends State<LabsScreen> {
   bool isLoading = true;
   String? error;
   String filter = 'all'; // 'all', 'available'
+  Event? _selectedEvent; // Event passed from events screen (for teacher booking)
 
   @override
   void initState() {
     super.initState();
     _loadLabs();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get event from EventSelectionHelper if teacher selected one from events screen
+    _selectedEvent = EventSelectionHelper.getSelectedEvent();
+    
+    // Show banner if event is selected
+    if (_selectedEvent != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đang book lab cho sự kiện: "${_selectedEvent!.title}"'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      });
+    }
   }
 
   @override
@@ -320,7 +343,7 @@ class _LabsScreenState extends State<LabsScreen> {
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: lab.isAvailable
-                        ? () => _navigateToBooking(lab)
+                        ? () => _navigateToBooking(lab, _selectedEvent)
                         : null,
                     icon: const Icon(Icons.book_online),
                     label: const Text('Đặt lịch'),
@@ -334,11 +357,11 @@ class _LabsScreenState extends State<LabsScreen> {
     );
   }
 
-  void _navigateToBooking(Lab lab) async {
+  void _navigateToBooking(Lab lab, [Event? event]) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BookingCreateScreen(lab: lab),
+        builder: (context) => BookingCreateScreen(lab: lab, event: event),
       ),
     );
 

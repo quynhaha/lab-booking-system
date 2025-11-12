@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/lab.dart';
+import '../models/event.dart';
 import 'booking_create_screen.dart';
 
 class LabDetailScreen extends StatelessWidget {
@@ -223,10 +224,10 @@ class LabDetailScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToBooking(BuildContext context) async {
+  void _navigateToBooking(BuildContext context, [Event? event]) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => BookingCreateScreen(lab: lab),
+        builder: (context) => BookingCreateScreen(lab: lab, event: event),
       ),
     );
 

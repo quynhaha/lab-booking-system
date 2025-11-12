@@ -16,21 +16,67 @@ class ApiService {
     _token = token;
   }
 
-  Future<List<Event>> getEvents() async {
+  Future<List<Event>> getEvents({int? labId}) async {
     try {
+      final uri = labId != null
+          ? Uri.parse('$baseUrl/events').replace(queryParameters: {'labId': labId.toString()})
+          : Uri.parse('$baseUrl/events');
+      
       final response = await _client
           .get(
-            Uri.parse('$baseUrl/events'),
+            uri,
             headers: _getHeaders(),
           )
           .timeout(timeout);
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((json) => Event.fromJson(json)).toList();
+        final events = jsonData.map((json) => Event.fromJson(json)).toList();
+        
+        // Filter by labId if provided (client-side filtering as fallback)
+        if (labId != null) {
+          return events.where((event) => event.labId != null && event.labId == labId).toList();
+        }
+        
+        return events;
       } else {
         throw ApiException(
           'Failed to load events: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } on SocketException {
+      throw const ApiException('No internet connection', 0);
+    } on HttpException {
+      throw const ApiException('HTTP error occurred', 0);
+    } catch (e) {
+      throw ApiException('Unexpected error: $e', 0);
+    }
+  }
+
+  // Get available events (APPROVED events for teachers to select when booking)
+  Future<List<Event>> getAvailableEvents({int? labId}) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('$baseUrl/events/available'),
+            headers: _getHeaders(),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        final events = jsonData.map((json) => Event.fromJson(json)).toList();
+        
+        // Filter by labId if provided
+        if (labId != null) {
+          return events.where((event) => event.labId != null && event.labId == labId).toList();
+        }
+        
+        return events;
+      } else {
+        throw ApiException(
+          'Failed to load available events: ${response.statusCode}',
           response.statusCode,
         );
       }
@@ -58,6 +104,62 @@ class ApiService {
       } else {
         throw ApiException(
           'Failed to load event: ${response.statusCode}',
+          response.statusCode,
+        );
+      }
+    } on SocketException {
+      throw const ApiException('No internet connection', 0);
+    } on HttpException {
+      throw const ApiException('HTTP error occurred', 0);
+    } catch (e) {
+      throw ApiException('Unexpected error: $e', 0);
+    }
+  }
+
+  // Join event (Student only)
+  Future<void> joinEvent(int eventId) async {
+    try {
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl/events/$eventId/join'),
+            headers: _getHeaders(),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        return; // Success
+      } else {
+        final errorData = json.decode(response.body);
+        throw ApiException(
+          errorData['message'] ?? 'Failed to join event',
+          response.statusCode,
+        );
+      }
+    } on SocketException {
+      throw const ApiException('No internet connection', 0);
+    } on HttpException {
+      throw const ApiException('HTTP error occurred', 0);
+    } catch (e) {
+      throw ApiException('Unexpected error: $e', 0);
+    }
+  }
+
+  // Get events that student has joined
+  Future<List<Event>> getMyEvents() async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse('$baseUrl/events/my-events'),
+            headers: _getHeaders(),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.map((json) => Event.fromJson(json)).toList();
+      } else {
+        throw ApiException(
+          'Failed to load my events: ${response.statusCode}',
           response.statusCode,
         );
       }

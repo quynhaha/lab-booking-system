@@ -31,7 +31,7 @@ public class BookingRuleDto {
     @Max(value = 100, message = "Priority must not exceed 100")
     private Integer priority;
     
-    @Pattern(regexp = "ALL|STUDENT|STAFF", message = "Applies to must be ALL, STUDENT, or STAFF")
+    @Pattern(regexp = "ALL|STUDENT|TEACHER", message = "Applies to must be ALL, STUDENT, or TEACHER")
     private String appliesTo;
     
     private Long categoryId;

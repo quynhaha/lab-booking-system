@@ -98,7 +98,7 @@ class BookingService {
     }
   }
 
-  Future<List<Booking>> createBooking(List<LabBookingSlot> labSlots, {int? categoryId}) async {
+  Future<List<Booking>> createBooking(List<LabBookingSlot> labSlots, {int? categoryId, int? eventId}) async {
     try {
       // Validate slots have required fields for API
       for (var slot in labSlots) {
@@ -114,6 +114,7 @@ class BookingService {
       final Map<String, dynamic> requestBody = {
         'labSlots': labSlots.map((slot) => slot.toApiJson()).toList(),
         if (categoryId != null) 'categoryId': categoryId,
+        if (eventId != null) 'eventId': eventId,
       };
 
       final response = await _client
@@ -173,6 +174,42 @@ class BookingService {
     } on HttpException {
       throw const BookingServiceException('HTTP error occurred', 0);
     } catch (e) {
+      throw BookingServiceException('Unexpected error: $e', 0);
+    }
+  }
+
+  /// Attach an event to a booking (Admin/Staff only)
+  /// Booking must be APPROVED before attaching event
+  Future<Map<String, dynamic>> attachEventToBooking(int bookingId, int eventId) async {
+    try {
+      final response = await _client
+          .post(
+            Uri.parse('$baseUrl/$bookingId/events'),
+            headers: _getHeaders(),
+            body: json.encode({
+              'eventId': eventId,
+            }),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        return jsonData;
+      } else {
+        final errorBody = response.body;
+        throw BookingServiceException(
+          'Failed to attach event to booking: ${response.statusCode} - $errorBody',
+          response.statusCode,
+        );
+      }
+    } on SocketException {
+      throw const BookingServiceException('No internet connection', 0);
+    } on HttpException {
+      throw const BookingServiceException('HTTP error occurred', 0);
+    } catch (e) {
+      if (e is BookingServiceException) {
+        rethrow;
+      }
       throw BookingServiceException('Unexpected error: $e', 0);
     }
   }

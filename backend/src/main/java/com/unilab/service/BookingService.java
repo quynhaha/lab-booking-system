@@ -42,6 +42,12 @@ public class BookingService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private BookingEventService bookingEventService;
+
+    @Autowired
+    private BookingEventRepository bookingEventRepository;
+
     // Get all bookings
     public List<BookingDto> getAllBookings() {
         return bookingRepository.findAll().stream()
@@ -83,9 +89,19 @@ public class BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Validate: Only TEACHER can select event when booking, STUDENT cannot
+        if (dto.getEventId() != null) {
+            String userRole = user.getRole() != null ? user.getRole().getName() : "";
+            if (!"TEACHER".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
+                throw new IllegalStateException("Only TEACHER can book with event. STUDENT cannot select event when booking.");
+            }
+        }
+
         List<BookingDto> results = new ArrayList<>();
         String parentCode = generateBookingCode();
         Long parentId = null;
+
+        String initialStatus = resolveInitialStatus(dto.getStatus());
 
         for (int i = 0; i < dto.getLabSlots().size(); i++) {
             LabBookingSlotDto slot = dto.getLabSlots().get(i);
@@ -126,7 +142,7 @@ public class BookingService {
             booking.setStartTime(startTime);
             booking.setEndTime(endTime);
             booking.setIsMultiLab(true);
-            booking.setStatus("PENDING");
+            booking.setStatus(initialStatus);
 
             if (i > 0 && parentId != null) booking.setParentBookingId(parentId);
 
@@ -134,6 +150,13 @@ public class BookingService {
             if (i == 0) parentId = saved.getId();
 
             results.add(convertToDto(saved));
+
+            // Link event if provided
+            if (dto.getEventId() != null) {
+                AttachEventRequest attachRequest = new AttachEventRequest();
+                attachRequest.setEventId(dto.getEventId());
+                bookingEventService.attachEventToBooking(saved.getId(), attachRequest, user.getEmail());
+            }
         }
 
         return results;
@@ -156,6 +179,17 @@ public class BookingService {
         }
     }
 
+    /**
+     * Resolve initial status for new booking
+     * Defaults to PENDING if not specified
+     */
+    private String resolveInitialStatus(String status) {
+        if (status != null && !status.trim().isEmpty()) {
+            return status;
+        }
+        return "PENDING"; // Default status - requires admin approval
+    }
+
     private Booking createBookingEntity(BookingDto dto, User user, Lab lab, String code) {
         Booking booking = new Booking();
         booking.setBookingCode(code);
@@ -165,7 +199,7 @@ public class BookingService {
         booking.setDescription(dto.getDescription());
         booking.setStartTime(dto.getStartTime());
         booking.setEndTime(dto.getEndTime());
-        booking.setStatus("PENDING");
+        booking.setStatus(resolveInitialStatus(dto.getStatus()));
         booking.setParticipantsCount(dto.getParticipantsCount());
         booking.setIsMultiLab(dto.getIsMultiLab());
         if (dto.getCategoryId() != null) {

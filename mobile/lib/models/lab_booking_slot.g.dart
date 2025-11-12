@@ -14,7 +14,7 @@ LabBookingSlot _$LabBookingSlotFromJson(Map<String, dynamic> json) =>
       participantsCount: (json['participantsCount'] as num).toInt(),
       startTime: json['startTime'] as String?,
       endTime: json['endTime'] as String?,
-      slotNumber: json['slotNumber'] as int?,
+      slotNumber: (json['slotNumber'] as num?)?.toInt(),
       bookingDate: json['bookingDate'] as String?,
     );
 

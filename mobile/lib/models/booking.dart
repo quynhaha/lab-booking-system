@@ -81,6 +81,8 @@ class Booking {
         return 'Đã hủy';
       case 'COMPLETED':
         return 'Hoàn thành';
+      case 'EVENT_JOINED':
+        return 'Đã tham gia sự kiện';
       default:
         return status ?? 'Không rõ';
     }
