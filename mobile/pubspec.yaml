@@ -1,0 +1,62 @@
+name: lab_booking_mobile
+description: "University Lab Booking Mobile App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.4 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI Components
+  cupertino_icons: ^1.0.8
+  material_design_icons_flutter: ^7.0.7296
+  
+  # HTTP Client
+  http: ^1.2.0
+  
+  # State Management
+  provider: ^6.1.2
+  
+  # Navigation
+  go_router: ^14.2.7
+  
+  # JSON Serialization
+  json_annotation: ^4.9.0
+  
+  # Local Storage
+  shared_preferences: ^2.3.0
+  
+  # Date/Time
+  intl: ^0.19.0
+  
+  # Google Sign In
+  google_sign_in: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  # Linting
+  flutter_lints: ^4.0.0
+  
+  # JSON Code Generation
+  json_serializable: ^6.8.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true
+  
+  # App Icon
+  # flutter_icons:
+  #   android: "launcher_icon"
+  #   ios: true
+  #   image_path: "assets/icon/app_icon.png"
+  
+  # Assets
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/

@@ -1,0 +1,65 @@
+-- Ensure labs table has new structure
+ALTER TABLE labs
+    ADD COLUMN IF NOT EXISTS lab_code VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS name VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS facilities VARCHAR(1000);
+
+-- Copy data from old lab_name column if present
+UPDATE labs SET name = lab_name WHERE name IS NULL;
+
+-- Drop the old redundant lab_name column (to avoid NOT NULL conflict)
+ALTER TABLE labs DROP COLUMN IF EXISTS lab_name;
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS rejection_reason VARCHAR(1000);
+-- Insert sample labs
+INSERT INTO labs (lab_code, name, description, location, capacity, status, facilities) VALUES
+('LAB-CS101', 'Computer Science Lab 1', 'Main computer science lab with 40 workstations', 'Building A - Floor 2', 40, 'AVAILABLE', 'PCs, Projector, Whiteboard, Air Conditioning'),
+('LAB-CS102', 'Computer Science Lab 2', 'Advanced computing lab with high-performance machines', 'Building A - Floor 2', 30, 'AVAILABLE', 'High-end PCs, Multiple Monitors, VR Equipment'),
+('LAB-NET01', 'Networking Lab', 'Networking and security lab', 'Building A - Floor 3', 25, 'AVAILABLE', 'Network Equipment, Servers, Security Tools'),
+('LAB-PHY01', 'Physics Lab', 'General physics laboratory', 'Building B - Floor 1', 30, 'AVAILABLE', 'Lab Equipment, Safety Gear'),
+('LAB-CHEM01', 'Chemistry Lab', 'General chemistry laboratory', 'Building B - Floor 2', 25, 'AVAILABLE', 'Lab Equipment, Fume Hoods, Safety Equipment');
+
+-- Insert sample event categories
+INSERT INTO event_categories (code, name, description, color, is_active, max_duration_hours, requires_approval) VALUES
+('WORKSHOP', 'Workshop', 'Educational workshops and training sessions', '#4CAF50', TRUE, 4, FALSE),
+('SEMINAR', 'Seminar', 'Academic seminars and presentations', '#2196F3', TRUE, 3, FALSE),
+('EXAM', 'Examination', 'Exams and assessments', '#F44336', TRUE, 3, TRUE),
+('RESEARCH', 'Research', 'Research activities', '#9C27B0', TRUE, 8, TRUE),
+('PRACTICAL', 'Practical Session', 'Hands-on practical classes', '#FF9800', TRUE, 3, FALSE),
+('EVENT', 'Special Event', 'Special events and competitions', '#E91E63', TRUE, 6, TRUE);
+
+-- Insert sample penalty rules
+INSERT INTO penalty_rules (code, name, description, violation_type, penalty_amount, penalty_type, penalty_points, suspension_days, is_active, grace_period_hours) VALUES
+('LATE-CANCEL', 'Late Cancellation', 'Cancellation within 24 hours of event', 'LATE_CANCELLATION', 50.00, 'FIXED', 10, 0, TRUE, 24),
+('NO-SHOW', 'No Show', 'Failed to attend without cancellation', 'NO_SHOW', 100.00, 'FIXED', 20, 7, TRUE, 0),
+('DAMAGE', 'Equipment Damage', 'Damage to lab equipment or facilities', 'DAMAGE', 0.00, 'PERCENTAGE', 50, 14, TRUE, 0),
+('POLICY-VIOLATION', 'Policy Violation', 'Violation of lab usage policies', 'POLICY_VIOLATION', 75.00, 'FIXED', 15, 3, TRUE, 0),
+('LATE-RETURN', 'Late Return', 'Late return of borrowed equipment', 'LATE_RETURN', 25.00, 'FIXED', 5, 0, TRUE, 2);
+
+-- Insert sample booking rules
+INSERT INTO booking_rules (code, name, description, rule_type, rule_value, is_active, priority, applies_to) VALUES
+('MAX-DURATION', 'Maximum Duration', 'Maximum booking duration in hours', 'MAX_DURATION', '{"hours": 4}', TRUE, 1, 'ALL'),
+('ADVANCE-BOOKING', 'Advance Booking', 'Minimum hours in advance for booking', 'ADVANCE_BOOKING', '{"hours": 24}', TRUE, 2, 'STUDENT'),
+('MAX-CONCURRENT', 'Maximum Concurrent Bookings', 'Maximum concurrent bookings per user', 'MAX_CONCURRENT', '{"count": 3}', TRUE, 3, 'STUDENT'),
+('ADMIN-OVERRIDE', 'Admin Override', 'Admins can override all restrictions', 'ADMIN_OVERRIDE', '{"enabled": true}', TRUE, 0, 'ADMIN'),
+('WEEKEND-LIMIT', 'Weekend Booking Limit', 'Restricted booking hours on weekends', 'TIME_LIMIT', '{"start": "09:00", "end": "18:00"}', TRUE, 4, 'STUDENT');
+
+-- Ensure admin user exists
+INSERT INTO users (full_name, email, password_hash, role_id, created_at, status)
+VALUES 
+('System Administrator', 'admin@unilab.edu', '$2a$10$F5w9hLjZ3Cg3jz0xU3KZueOi8yCs2aLZecQZ6BpPgFr9n92j8V9Xy', 1, NOW(), TRUE)
+ON CONFLICT (email) DO NOTHING;
+
+-- Insert sample bookings (for testing)
+INSERT INTO bookings (booking_code, user_id, lab_id, category_id, title, description, start_time, end_time, status, participants_count, is_multi_lab) VALUES
+('BK-TEST001', (SELECT user_id FROM users WHERE email = 'admin@unilab.edu' LIMIT 1), 1, 1, 'Introduction to Programming Workshop', 'Workshop for first-year students', CURRENT_TIMESTAMP + INTERVAL '7 days', CURRENT_TIMESTAMP + INTERVAL '7 days' + INTERVAL '3 hours', 'APPROVED', 30, FALSE),
+('BK-TEST002', (SELECT user_id FROM users WHERE email = 'admin@unilab.edu' LIMIT 1), 2, 2, 'AI Research Seminar', 'Latest developments in artificial intelligence', CURRENT_TIMESTAMP + INTERVAL '14 days', CURRENT_TIMESTAMP + INTERVAL '14 days' + INTERVAL '2 hours', 'PENDING', 25, FALSE);
+
+-- Add comments for better documentation
+COMMENT ON TABLE labs IS 'Laboratory rooms and facilities';
+COMMENT ON TABLE event_categories IS 'Categories for different types of events and bookings';
+COMMENT ON TABLE bookings IS 'Lab booking records';
+COMMENT ON TABLE penalty_rules IS 'Rules defining penalties for violations';
+COMMENT ON TABLE penalty_history IS 'History of penalties applied to users';
+COMMENT ON TABLE booking_rules IS 'Rules and restrictions for making bookings';

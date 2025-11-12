@@ -1,0 +1,66 @@
+﻿services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/lab_booking
+      - SPRING_DATASOURCE_USERNAME=lab_user
+      - SPRING_DATASOURCE_PASSWORD=lab_pass
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      - SPRING_FLYWAY_ENABLED=true
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=noreply@fpt.edu.vn
+      - SPRING_MAIL_PASSWORD=dummy
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=false
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=false
+      - APP_GOOGLE_CLIENT_ID=454718520252-ld1bai5jfp7497qp9qosjhjv25glbb3l.apps.googleusercontent.com
+      - APP_GOOGLE_ANDROID_CLIENT_ID=454718520252-5b4e29q7a8qrgu4ka162u958kr06sihe.apps.googleusercontent.com
+    networks:
+      - appnet
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - appnet
+
+  mobile:
+    build: ./mobile
+    ports:
+      - "3000:3000"
+    environment:
+      - FLUTTER_API_BASE_URL=http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - appnet
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=lab_booking
+      - POSTGRES_USER=lab_user
+      - POSTGRES_PASSWORD=lab_pass
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
+
+volumes:
+  db-data:

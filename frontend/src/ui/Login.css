@@ -1,0 +1,186 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: flex-start; /* keep content toward the top so users don't need to scroll */
+  background: #f6f7f8;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  padding: 32px 16px 48px; /* smaller top padding so UI appears near the top */
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.logo {
+  background: #1652f0;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
+  border-radius: 10px;
+  margin: 0 auto 8px;
+  font-weight: 700;
+}
+
+.logo-img {
+  display: block;
+  width: 120px;
+  height: auto;
+  margin: 0 auto 8px;
+}
+
+.login-brand h1 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+.login-brand .sub {
+  margin: 4px 0 24px;
+  color: #6b7280;
+}
+
+.login-card {
+  width: 360px; /* comfortable width that matches original design */
+  max-width: calc(100% - 40px);
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 20px 24px;
+  box-shadow: 0 6px 18px rgba(13, 16, 39, 0.06);
+  box-sizing: border-box; /* ensure padding is included in width */
+}
+
+.login-card h2 {
+  margin: 0 0 6px;
+}
+.login-card .hint {
+  margin: 0 0 12px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  color: #111827;
+  margin-top: 10px;
+}
+.input, .select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #eef2f7;
+  background: #f7f7f8;
+  outline: none;
+  box-sizing: border-box; /* prevent inputs from growing past container */
+}
+
+/* global box-sizing to avoid unexpected overflow */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.btn {
+  display: inline-block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 0;
+  margin-top: 14px;
+  cursor: pointer;
+}
+.btn.primary {
+  background: #0f172a;
+  color: white;
+}
+
+.message {
+  margin-top: 10px;
+  color: #b91c1c;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  background: #fee2e2;
+  font-size: 14px;
+}
+
+.message.success {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.demo {
+  margin-top: 14px;
+}
+.demo-title {
+  margin: 0 0 8px;
+  color: #6b7280;
+  font-size: 13px;
+}
+.demo-buttons {
+  display: grid;
+  gap: 8px;
+}
+.demo-btn {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  color: #111827;
+}
+
+.forgot {
+  margin-top: 14px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.info-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.info-box p {
+  margin: 4px 0;
+  color: #1e40af;
+  font-size: 13px;
+}
+
+.info-box .small-text {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Responsive rules */
+@media (max-width: 768px) {
+  .login-page {
+    padding: 32px 12px 40px;
+  }
+  .login-brand .logo {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+  .login-brand h1 { font-size: 20px; }
+  .login-card {
+    width: 92%;
+    max-width: 520px;
+    padding: 16px 18px;
+  }
+  .input, .select { padding: 10px; }
+  .btn { padding: 10px; }
+}
+
+@media (max-width: 420px) {
+  .login-brand h1 { font-size: 18px; }
+  .login-brand .sub { font-size: 13px; }
+  .login-card { width: 100%; border-radius: 8px; padding: 12px; }
+  .demo-buttons { gap: 6px; }
+  .demo-btn { padding: 10px 8px; font-size: 14px; }
+}
