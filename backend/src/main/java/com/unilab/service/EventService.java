@@ -33,9 +33,19 @@ public class EventService {
         // Validate business rules
         validateEventRequest(request);
 
-        // Check if user exists
-        User user = userRepository.findById(userId)
+        // Check if user exists and fetch role
+        User user = userRepository.findByIdWithRole(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Determine initial status based on user role
+        // ADMIN creates events → automatically APPROVED
+        // TEACHER creates events → PENDING (requires admin approval)
+        String initialStatus;
+        if (user.getRole() != null && "ADMIN".equalsIgnoreCase(user.getRole().getName())) {
+            initialStatus = "APPROVED";
+        } else {
+            initialStatus = "PENDING";
+        }
 
         // Lab is optional - check if lab exists only if labId is provided
         Lab lab = null;
@@ -62,7 +72,7 @@ public class EventService {
         event.setEndTime(request.getEndTime()); // Can be null
         event.setUser(user);
         event.setLab(lab); // Can be null
-        event.setStatus("PENDING");
+        event.setStatus(initialStatus);
         event.setIsPrivate(false);
         event.setInvitees(null);
         event.setCreatedAt(OffsetDateTime.now());

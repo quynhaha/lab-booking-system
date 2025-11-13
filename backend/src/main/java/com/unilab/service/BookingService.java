@@ -48,6 +48,9 @@ public class BookingService {
     @Autowired
     private BookingEventRepository bookingEventRepository;
 
+    @Autowired
+    private EventRepository eventRepository;
+
     // Get all bookings
     public List<BookingDto> getAllBookings() {
         return bookingRepository.findAll().stream()
@@ -173,9 +176,45 @@ public class BookingService {
     }
 
     private void checkConflicts(Long labId, LocalDateTime start, LocalDateTime end) {
-        List<Booking> conflicts = bookingRepository.findConflictingBookings(labId, start, end);
-        if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Lab is already booked for this timeslot");
+        // Check for conflicting bookings
+        List<Booking> conflictingBookings = bookingRepository.findConflictingBookings(labId, start, end);
+        if (!conflictingBookings.isEmpty()) {
+            Booking conflict = conflictingBookings.get(0);
+            String conflictInfo = String.format(
+                "Phòng lab đã được đặt trong khoảng thời gian này. " +
+                "Booking hiện tại: '%s' từ %s đến %s (Trạng thái: %s)",
+                conflict.getTitle() != null ? conflict.getTitle() : "Không có tiêu đề",
+                conflict.getStartTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                conflict.getEndTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                conflict.getStatus()
+            );
+            throw new IllegalStateException(conflictInfo);
+        }
+
+        // Check for conflicting events (only APPROVED events with lab and times)
+        java.time.OffsetDateTime startOffset = start.atOffset(java.time.ZoneOffset.UTC);
+        java.time.OffsetDateTime endOffset = end.atOffset(java.time.ZoneOffset.UTC);
+        
+        List<com.unilab.model.Event> conflictingEvents = eventRepository.findConflictingEvents(
+            labId, startOffset, endOffset);
+        
+        // Filter only APPROVED events that have lab and times assigned
+        conflictingEvents = conflictingEvents.stream()
+            .filter(e -> "APPROVED".equalsIgnoreCase(e.getStatus()))
+            .filter(e -> e.getLab() != null)
+            .filter(e -> e.getStartTime() != null && e.getEndTime() != null)
+            .collect(java.util.stream.Collectors.toList());
+        
+        if (!conflictingEvents.isEmpty()) {
+            com.unilab.model.Event conflict = conflictingEvents.get(0);
+            String conflictInfo = String.format(
+                "Phòng lab đã được đặt cho sự kiện trong khoảng thời gian này. " +
+                "Sự kiện: '%s' từ %s đến %s",
+                conflict.getTitle() != null ? conflict.getTitle() : "Không có tiêu đề",
+                conflict.getStartTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                conflict.getEndTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            );
+            throw new IllegalStateException(conflictInfo);
         }
     }
 

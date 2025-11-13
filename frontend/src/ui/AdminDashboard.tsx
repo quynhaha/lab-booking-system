@@ -656,7 +656,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
             {loadingEvents ? (
               <div className="loading-message">Loading events...</div>
             ) : events.length === 0 ? (
-              <div className="empty-message">No events found. Events can only be created by Teachers.</div>
+              <div className="empty-message">No events found. Click "+ Create Event" to create one.</div>
             ) : (
               events.map((event) => (
                 <div key={event.id} className="ad-card">

@@ -129,11 +129,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const fillAdminDemo = () => {
-    setEmail('admin@fpt.edu.vn');
-    setPassword('admin123');
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('jwt_token');
     setAuthenticated(false);
@@ -191,25 +186,6 @@ export const App: React.FC = () => {
             {message}
           </div>
         )}
-
-        <div className="demo">
-          <p className="demo-title">💡 Demo Account:</p>
-          <div className="demo-buttons">
-            <button
-              type="button"
-              className="btn demo-btn"
-              onClick={fillAdminDemo}
-              disabled={loading}
-            >
-              Fill Admin Credentials
-            </button>
-          </div>
-        </div>
-
-        <div className="info-box">
-          <p><strong>ℹ️ Admin Access Only</strong></p>
-          <p className="small-text">This dashboard is for administrators only. Students and teachers should use the mobile app.</p>
-        </div>
       </form>
     </div>
   );

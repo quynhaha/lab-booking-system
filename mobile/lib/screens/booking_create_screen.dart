@@ -221,10 +221,36 @@ class _BookingCreateScreenState extends State<BookingCreateScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Lỗi: ${e.toString()}';
+        // Remove "Exception: " prefix if present
+        if (errorMessage.startsWith('Exception: ')) {
+          errorMessage = errorMessage.substring(11);
+        }
+        // Remove "BookingServiceException: " prefix if present
+        if (errorMessage.startsWith('BookingServiceException: ')) {
+          errorMessage = errorMessage.substring(26);
+        }
+        
+        // Show error with longer duration for conflict errors
+        final isConflictError = errorMessage.toLowerCase().contains('đã được đặt') ||
+                                errorMessage.toLowerCase().contains('conflict') ||
+                                errorMessage.toLowerCase().contains('trùng');
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
+            content: Text(
+              errorMessage,
+              style: const TextStyle(fontSize: 14),
+            ),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: isConflictError ? 6 : 4),
+            action: SnackBarAction(
+              label: 'Đóng',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }

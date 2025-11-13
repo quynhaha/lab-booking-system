@@ -129,9 +129,30 @@ class BookingService {
         final List<dynamic> jsonData = json.decode(response.body);
         return jsonData.map((json) => Booking.fromJson(json)).toList();
       } else {
-        final errorBody = response.body;
+        // Try to parse error message from backend
+        String errorMessage = 'Không thể đặt lịch. Vui lòng thử lại.';
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData is Map<String, dynamic>) {
+            // Backend might return error in 'message' field
+            if (errorData.containsKey('message')) {
+              errorMessage = errorData['message'].toString();
+            } else if (errorData.containsKey('error')) {
+              errorMessage = errorData['error'].toString();
+            } else {
+              // If error is a string directly
+              errorMessage = errorData.toString();
+            }
+          }
+        } catch (e) {
+          // If JSON parsing fails, use raw response body
+          final errorBody = response.body;
+          if (errorBody.isNotEmpty && errorBody.length < 500) {
+            errorMessage = errorBody;
+          }
+        }
         throw BookingServiceException(
-          'Failed to create booking: ${response.statusCode} - $errorBody',
+          errorMessage,
           response.statusCode,
         );
       }
