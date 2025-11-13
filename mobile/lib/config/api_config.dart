@@ -8,7 +8,7 @@ class ApiConfig {
   // Tìm "IPv4 Address" trong phần "Wireless LAN adapter Wi-Fi"
   
   // ⚠️ THAY ĐỔI IP NÀY THEO MÁY TÍNH CỦA BẠN
-  static const String _localIP = '172.31.16.1';  // <-- IP máy tính của bạn
+  static const String _localIP = '192.168.109.157';  // <-- IP máy tính của bạn
   
   // Các môi trường khác nhau:
   static const String _emulatorIP = '10.0.2.2';     // Android Emulator

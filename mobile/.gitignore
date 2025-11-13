@@ -43,6 +43,18 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android build directories
+/android/app/build/
+/android/build/
+/android/.gradle/
+/android/local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.so
+
 # Web related
 lib/generated_plugin_registrant.dart
 

@@ -49,7 +49,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     totalCapacity: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'schedules' | 'events'>('labs');
+  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'events'>('labs');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
@@ -471,12 +471,6 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
             All Bookings
           </button>
           <button 
-            className={`ad-nav-btn ${activeTab === 'schedules' ? 'active' : ''}`}
-            onClick={() => setActiveTab('schedules')}
-          >
-            Schedules
-          </button>
-          <button 
             className={`ad-nav-btn ${activeTab === 'events' ? 'active' : ''}`}
             onClick={() => setActiveTab('events')}
           >
@@ -494,7 +488,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
       <main className="ad-main">
         <section className="ad-header">
           <h2>Admin Dashboard</h2>
-          <p className="ad-sub">Manage laboratories, schedules, and bookings</p>
+          <p className="ad-sub">Manage laboratories, events, and bookings</p>
 
           <div className="ad-stats">
             <div className="stat card-blue">
@@ -529,12 +523,6 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               onClick={() => setActiveTab('bookings')}
             >
               Bookings
-            </button>
-            <button 
-              className={`tab ${activeTab === 'schedules' ? 'active' : ''}`}
-              onClick={() => setActiveTab('schedules')}
-            >
-              Schedules
             </button>
             <button 
               className={`tab ${activeTab === 'events' ? 'active' : ''}`}
@@ -662,15 +650,6 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
           </section>
         )}
 
-        {activeTab === 'schedules' && (
-          <section className="ad-content">
-            <div className="info-panel">
-              <h3>📅 Recurring Schedules</h3>
-              <p>Schedules management feature coming soon!</p>
-              <p className="muted">Create and manage recurring lab schedules for classes.</p>
-            </div>
-        </section>
-        )}
 
         {activeTab === 'events' && (
           <section className="ad-grid">
@@ -698,8 +677,17 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                     <p className="ad-desc">{event.description}</p>
                   )}
                   <div className="ad-meta">
-                    <div>Start: {new Date(event.startTime).toLocaleString()}</div>
-                    <div>End: {new Date(event.endTime).toLocaleString()}</div>
+                    {event.startTime && event.endTime && (
+                      <>
+                        <div>Start: {new Date(event.startTime).toLocaleString()}</div>
+                        <div>End: {new Date(event.endTime).toLocaleString()}</div>
+                      </>
+                    )}
+                    {(!event.startTime || !event.endTime) && (
+                      <div style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                        Chưa có thời gian (sẽ được đặt khi teacher book lab)
+                      </div>
+                    )}
                     {event.userFullName && (
                       <div>Created by: {event.userFullName}</div>
                     )}
