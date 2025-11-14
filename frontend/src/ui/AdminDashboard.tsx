@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './AdminDashboard.css';
+import ReportGeneration from './ReportGeneration';
 
 const apiBaseUrl = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -49,7 +50,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     totalCapacity: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'events'>('labs');
+  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'events' | 'reports'>('labs');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
@@ -81,6 +82,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     title: '',
     description: '',
     labId: 0,
+    startTime: '',
+    endTime: '',
   });
 
   useEffect(() => {
@@ -476,6 +479,12 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
           >
             Events
           </button>
+          <button 
+            className={`ad-nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            Reports
+          </button>
         </nav>
         <div className="ad-right">
           <div className="ad-welcome">
@@ -529,6 +538,12 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               onClick={() => setActiveTab('events')}
             >
               Events
+            </button>
+            <button 
+              className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              Reports
             </button>
           </div>
           <div className="ad-add">
@@ -713,6 +728,10 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               ))
             )}
           </section>
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportGeneration token={token} />
         )}
       </main>
 
@@ -1031,6 +1050,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                       title: '',
                       description: '',
                       labId: 0,
+                      startTime: '',
+                      endTime: '',
                     });
                   }}
                 >
