@@ -3,7 +3,6 @@ import './Login.css';
 import AdminDashboard from './AdminDashboard';
 
 const apiBaseUrl = 'https://lab-booking-system-on5y.onrender.com';
-
 interface User {
   id: number;
   fullName: string;
