@@ -26,8 +26,8 @@ ChartJS.register(
 // 🟩 THÊM TYPE Ở ĐÂY — BẮT BUỘC
 type BookingStatus = "APPROVED" | "REJECTED" | "PENDING";
 
-const apiBaseUrl =
-  (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:8080";
+const apiBaseUrl = 'https://lab-booking-system-on5y.onrender.com';
+
 
 export default function AnalyticsDashboard({ token }: { token: string }) {
   const [bookings, setBookings] = useState<any[]>([]);

@@ -14,17 +14,23 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // Cho phép tất cả origins để mobile app và web admin có thể kết nối
-        config.setAllowedOriginPatterns(List.of("*"));
+
+        // Only allow real origins
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://lab-booking-system-fe.onrender.com",
+                "https://lab-booking-system.onrender.com",
+                "https://lab-booking-system-on5y.onrender.com"
+        ));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(false); // Must be false when using wildcard origins
+        config.setAllowCredentials(true);
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return new CorsFilter(source);
     }
 }
-
-
