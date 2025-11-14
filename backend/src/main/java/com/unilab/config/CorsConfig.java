@@ -20,7 +20,7 @@ public class CorsConfig {
                 "http://localhost:5173",
                 "https://lab-booking-system-fe.onrender.com",
                 "https://lab-booking-system.onrender.com",
-                "https://lab-booking-system-on5y.onrender.com"
+                "https://lab-booking-system-on5y.onrender.com",
                 "https://lab-booking-system-fe.onrender.com"
         ));
 
