@@ -295,9 +295,48 @@ public class BookingService {
     }
     
     // Approve booking
+//    public BookingDto approveBooking(Long bookingId, String adminEmail) {
+//        Booking booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new RuntimeException("Booking not found"));
+//        booking.getUser().getEmail();
+//        User admin = userRepository.findByEmail(adminEmail)
+//                .orElseThrow(() -> new RuntimeException("Admin not found"));
+//
+//        booking.setStatus("APPROVED");
+//        booking.setApprovedByUserId(admin.getId());
+//        booking.setApprovedAt(LocalDateTime.now());
+//        booking.setUpdatedAt(LocalDateTime.now());
+//
+//        bookingRepository.save(booking);
+//
+//        try {
+//            emailService.sendBookingApprovalEmail(
+//                    booking.getUser().getEmail(),
+//                    booking.getTitle(),
+//                    booking.getStartTime()
+//            );
+//        } catch (Exception e) {
+//            System.err.println("Failed to send approval email: " + e.getMessage());
+//        }
+//
+//        return BookingDto.fromEntity(booking);
+//    }
+
     public BookingDto approveBooking(Long bookingId, String adminEmail) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // 🔍 DEBUG
+        System.out.println("===== APPROVE DEBUG START =====");
+        System.out.println("Booking ID: " + bookingId);
+        System.out.println("Admin Email: " + adminEmail);
+
+        if (booking.getUser() != null) {
+            System.out.println("Booking user email: " + booking.getUser().getEmail());
+        } else {
+            System.out.println("booking.getUser() = NULL (NO EMAIL LOADED)");
+        }
+        System.out.println("===== APPROVE DEBUG END =====");
 
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
@@ -308,17 +347,31 @@ public class BookingService {
         booking.setUpdatedAt(LocalDateTime.now());
 
         bookingRepository.save(booking);
+
+        try {
+            emailService.sendBookingApprovalEmail(
+                    booking.getUser().getEmail(),   // ⛔ Có thể bị null
+                    booking.getTitle(),
+                    booking.getStartTime()
+            );
+        } catch (Exception e) {
+            System.err.println("Failed to send approval email: " + e.getMessage());
+        }
+
         return BookingDto.fromEntity(booking);
     }
 
     //Reject booking
+    @Transactional
     public BookingDto rejectBooking(Long bookingId, String reason, String adminEmail) {
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
+        // Update booking fields
         booking.setStatus("REJECTED");
         booking.setApprovedByUserId(admin.getId());
         booking.setApprovedAt(LocalDateTime.now());
@@ -327,6 +380,7 @@ public class BookingService {
 
         bookingRepository.save(booking);
 
+        // Send rejection email
         try {
             emailService.sendBookingRejectionEmail(
                     booking.getUser().getEmail(),
@@ -340,6 +394,7 @@ public class BookingService {
 
         return BookingDto.fromEntity(booking);
     }
+
     // Get pending approvals
     public List<BookingDto> getPendingApprovals() {
         return bookingRepository.findPendingApprovals().stream()

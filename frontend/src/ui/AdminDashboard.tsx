@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import './AdminDashboard.css';
 import ReportGeneration from './ReportGeneration';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import "./AnalyticsDashboard.css";
+
 
 const apiBaseUrl = (import.meta as any).env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -50,7 +53,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     totalCapacity: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'events' | 'reports'>('labs');
+  const [activeTab, setActiveTab] = useState<'labs' | 'bookings' | 'events' | 'reports' | 'analytics'>('labs');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLab, setSelectedLab] = useState<Lab | null>(null);
@@ -70,7 +73,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     status: 'AVAILABLE',
     facilities: '',
   });
-  
+
   // Events state
   const [events, setEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -107,15 +110,15 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (labsRes.ok) {
         const labsData = await labsRes.json();
         setLabs(labsData);
-        
+
         // Calculate stats from labs
         const totalCapacity = labsData.reduce((sum: number, lab: Lab) => sum + lab.capacity, 0);
         const availableLabs = labsData.filter((lab: Lab) => lab.status === 'AVAILABLE').length;
-        
+
         setStats(prev => ({
           ...prev,
           totalLabs: labsData.length,
@@ -131,7 +134,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
             'Authorization': `Bearer ${token}`,
           },
         });
-        
+
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(prev => ({
@@ -143,7 +146,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
       } catch (error) {
         console.log('Dashboard stats not available:', error);
       }
-      
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -267,26 +270,51 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     }
   };
 
+  // const handleApproveBooking = async (bookingId: number) => {
+  //   try {
+  //     const response = await fetch(`${apiBaseUrl}/api/v1/bookings/${bookingId}/approve`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to approve booking');
+  //     }
+
+  //     alert('Booking approved successfully!');
+  //     fetchBookings(); // Refresh bookings list
+  //   } catch (error) {
+  //     console.error('Error approving booking:', error);
+  //     alert('Failed to approve booking. Please try again.');
+  //   }
+  // };
+
   const handleApproveBooking = async (bookingId: number) => {
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/bookings/${bookingId}/approve`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/v1/bookings/${bookingId}/approve`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({}) 
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to approve booking');
-      }
-
-      alert('Booking approved successfully!');
-      fetchBookings(); // Refresh bookings list
-    } catch (error) {
-      console.error('Error approving booking:', error);
-      alert('Failed to approve booking. Please try again.');
+    if (!response.ok) {
+      throw new Error('Failed to approve booking');
     }
-  };
+
+    alert('Booking approved successfully!');
+    fetchBookings();
+  } catch (error) {
+    console.error('Error approving booking:', error);
+    alert('Failed to approve booking. Please try again.');
+  }
+};
+
 
   const handleRejectBooking = (booking: any) => {
     setBookingToReject(booking);
@@ -406,7 +434,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newEvent.title.trim()) {
       alert('Please fill in event title');
       return;
@@ -453,37 +481,43 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
     <div className="ad-page">
       <header className="ad-topbar">
         <div className="ad-left">
-          <img 
-            src="https://iconape.com/wp-content/png_logo_vector/fpt-university-logo.png" 
-            alt="FPT University" 
-            className="ad-logo-img" 
+          <img
+            src="https://iconape.com/wp-content/png_logo_vector/fpt-university-logo.png"
+            alt="FPT University"
+            className="ad-logo-img"
           />
           <div className="ad-title">University Labs</div>
         </div>
         <nav className="ad-nav">
-          <button 
+          <button
             className={`ad-nav-btn ${activeTab === 'labs' ? 'active' : ''}`}
             onClick={() => setActiveTab('labs')}
           >
             Labs
           </button>
-          <button 
+          <button
             className={`ad-nav-btn ${activeTab === 'bookings' ? 'active' : ''}`}
             onClick={() => setActiveTab('bookings')}
           >
             All Bookings
           </button>
-          <button 
+          <button
             className={`ad-nav-btn ${activeTab === 'events' ? 'active' : ''}`}
             onClick={() => setActiveTab('events')}
           >
             Events
           </button>
-          <button 
+          <button
             className={`ad-nav-btn ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
             Reports
+          </button>
+          <button
+            className={`ad-nav-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            Analytics
           </button>
         </nav>
         <div className="ad-right">
@@ -521,29 +555,35 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
 
         <section className="ad-actions">
           <div className="ad-tabs">
-            <button 
+            <button
               className={`tab ${activeTab === 'labs' ? 'active' : ''}`}
               onClick={() => setActiveTab('labs')}
             >
               Labs
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'bookings' ? 'active' : ''}`}
               onClick={() => setActiveTab('bookings')}
             >
               Bookings
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'events' ? 'active' : ''}`}
               onClick={() => setActiveTab('events')}
             >
               Events
             </button>
-            <button 
+            <button
               className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
               onClick={() => setActiveTab('reports')}
             >
               Reports
+            </button>
+            <button
+              className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              Analytics
             </button>
           </div>
           <div className="ad-add">
@@ -561,28 +601,28 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
         </section>
 
         {activeTab === 'labs' && (
-        <section className="ad-grid">
+          <section className="ad-grid">
             {loading ? (
               <div className="loading-message">Loading labs...</div>
             ) : labs.length === 0 ? (
               <div className="empty-message">No labs found. Click "+ Add Lab" to create one.</div>
             ) : (
               labs.map((lab) => (
-                <div 
-                  key={lab.id} 
+                <div
+                  key={lab.id}
                   className={`ad-card ${lab.status !== 'AVAILABLE' ? 'unavailable' : ''}`}
                 >
-              <div className="ad-card-head">
-                <div>
-                  <div className="ad-lab-name">{lab.name}</div>
-                  <div className="ad-lab-loc">{lab.building} - {lab.room}</div>
-                </div>
+                  <div className="ad-card-head">
+                    <div>
+                      <div className="ad-lab-name">{lab.name}</div>
+                      <div className="ad-lab-loc">{lab.building} - {lab.room}</div>
+                    </div>
                     <div className={`ad-badge ${getStatusBadgeClass(lab.status)}`}>
                       {getStatusText(lab.status)}
                     </div>
-              </div>
-              <p className="ad-desc">{lab.description}</p>
-              <div className="ad-meta">Capacity: {lab.capacity} people</div>
+                  </div>
+                  <p className="ad-desc">{lab.description}</p>
+                  <div className="ad-meta">Capacity: {lab.capacity} people</div>
                   {lab.equipment && lab.equipment.length > 0 && (
                     <div className="ad-equipment">
                       Equipment:{' '}
@@ -591,14 +631,14 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                       ))}
                     </div>
                   )}
-              <div className="ad-actions-row">
-                    <button 
+                  <div className="ad-actions-row">
+                    <button
                       className="btn-view"
                       onClick={() => handleViewDetails(lab)}
                     >
                       View Details
                     </button>
-                    <button 
+                    <button
                       className="btn-delete"
                       onClick={() => handleDeleteLab(lab)}
                     >
@@ -645,13 +685,13 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   </div>
                   {booking.status === 'PENDING' && (
                     <div className="ad-actions-row">
-                      <button 
+                      <button
                         className="btn-approve"
                         onClick={() => handleApproveBooking(booking.id)}
                       >
                         ✓ Approve
                       </button>
-                      <button 
+                      <button
                         className="btn-reject"
                         onClick={() => handleRejectBooking(booking)}
                       >
@@ -680,11 +720,10 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                       <div className="ad-lab-name">{event.title}</div>
                       <div className="ad-lab-loc">{event.labName || `Lab ID: ${event.labId}`}</div>
                     </div>
-                    <div className={`ad-badge ${
-                      event.status === 'PENDING' ? 'pending' : 
-                      event.status === 'APPROVED' ? 'avail' : 
-                      'unavail'
-                    }`}>
+                    <div className={`ad-badge ${event.status === 'PENDING' ? 'pending' :
+                      event.status === 'APPROVED' ? 'avail' :
+                        'unavail'
+                      }`}>
                       {event.status}
                     </div>
                   </div>
@@ -709,14 +748,14 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   </div>
                   {event.status === 'PENDING' && (
                     <div className="ad-actions-row">
-                      <button 
+                      <button
                         className="btn-view"
                         onClick={() => handleApproveEvent(event.id)}
                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none' }}
                       >
                         ✓ Approve
                       </button>
-                      <button 
+                      <button
                         className="btn-delete"
                         onClick={() => handleRejectEvent(event)}
                       >
@@ -732,6 +771,9 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
 
         {activeTab === 'reports' && (
           <ReportGeneration token={token} />
+        )}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard token={token} />
         )}
       </main>
 
@@ -872,7 +914,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   type="text"
                   placeholder="e.g., LAB001"
                   value={newLab.labCode}
-                  onChange={(e) => setNewLab({...newLab, labCode: e.target.value})}
+                  onChange={(e) => setNewLab({ ...newLab, labCode: e.target.value })}
                 />
               </div>
               <div className="form-group">
@@ -881,7 +923,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   type="text"
                   placeholder="e.g., Computer Lab A"
                   value={newLab.name}
-                  onChange={(e) => setNewLab({...newLab, name: e.target.value})}
+                  onChange={(e) => setNewLab({ ...newLab, name: e.target.value })}
                 />
               </div>
               <div className="form-group">
@@ -890,7 +932,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   type="text"
                   placeholder="e.g., Engineering Building - Floor 2, Room 201"
                   value={newLab.location}
-                  onChange={(e) => setNewLab({...newLab, location: e.target.value})}
+                  onChange={(e) => setNewLab({ ...newLab, location: e.target.value })}
                 />
               </div>
               <div className="form-row">
@@ -900,14 +942,14 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                     type="number"
                     placeholder="e.g., 30"
                     value={newLab.capacity || ''}
-                    onChange={(e) => setNewLab({...newLab, capacity: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setNewLab({ ...newLab, capacity: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 <div className="form-group">
                   <label>Status</label>
                   <select
                     value={newLab.status}
-                    onChange={(e) => setNewLab({...newLab, status: e.target.value})}
+                    onChange={(e) => setNewLab({ ...newLab, status: e.target.value })}
                   >
                     <option value="AVAILABLE">Available</option>
                     <option value="MAINTENANCE">Maintenance</option>
@@ -920,7 +962,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                 <textarea
                   placeholder="Describe the lab facilities and purpose..."
                   value={newLab.description}
-                  onChange={(e) => setNewLab({...newLab, description: e.target.value})}
+                  onChange={(e) => setNewLab({ ...newLab, description: e.target.value })}
                   rows={3}
                 />
               </div>
@@ -930,7 +972,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   type="text"
                   placeholder="e.g., Computers, Projector, Whiteboard"
                   value={newLab.facilities}
-                  onChange={(e) => setNewLab({...newLab, facilities: e.target.value})}
+                  onChange={(e) => setNewLab({ ...newLab, facilities: e.target.value })}
                 />
               </div>
             </div>
@@ -938,8 +980,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               <button className="btn-cancel" onClick={() => setShowAddModal(false)}>
                 Cancel
               </button>
-              <button 
-                className="btn-submit" 
+              <button
+                className="btn-submit"
                 onClick={handleCreateLab}
                 disabled={!newLab.labCode || !newLab.name || !newLab.location || !newLab.capacity}
               >
@@ -973,8 +1015,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               </div>
             </div>
             <div className="modal-footer">
-              <button 
-                className="btn-cancel" 
+              <button
+                className="btn-cancel"
                 onClick={() => {
                   setShowRejectEventModal(false);
                   setRejectEventReason('');
@@ -982,8 +1024,8 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
               >
                 Cancel
               </button>
-              <button 
-                className="btn-delete-confirm" 
+              <button
+                className="btn-delete-confirm"
                 onClick={confirmRejectEvent}
               >
                 Reject Event
@@ -1009,7 +1051,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                     type="text"
                     placeholder="e.g., Java Programming Workshop"
                     value={newEvent.title}
-                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                     required
                   />
                 </div>
@@ -1018,7 +1060,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   <textarea
                     placeholder="Describe the event..."
                     value={newEvent.description}
-                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                     rows={3}
                   />
                 </div>
@@ -1026,7 +1068,7 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                   <label>Lab (Optional)</label>
                   <select
                     value={newEvent.labId || 0}
-                    onChange={(e) => setNewEvent({...newEvent, labId: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setNewEvent({ ...newEvent, labId: parseInt(e.target.value) || 0 })}
                   >
                     <option value={0}>No lab assigned (can assign later)</option>
                     {labs.map((lab) => (
@@ -1035,15 +1077,15 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                       </option>
                     ))}
                   </select>
-                  <small style={{color: '#666', fontSize: '12px'}}>
+                  <small style={{ color: '#666', fontSize: '12px' }}>
                     Note: Time will be set when teacher books a lab for this event
                   </small>
                 </div>
               </div>
               <div className="modal-footer">
-                <button 
+                <button
                   type="button"
-                  className="btn-cancel" 
+                  className="btn-cancel"
                   onClick={() => {
                     setShowAddEventModal(false);
                     setNewEvent({
@@ -1057,9 +1099,9 @@ export default function AdminDashboard({ onLogout, user, token }: AdminDashboard
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
-                  className="btn-submit" 
+                  className="btn-submit"
                   disabled={!newEvent.title.trim()}
                 >
                   Create Event

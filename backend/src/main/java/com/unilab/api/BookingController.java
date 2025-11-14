@@ -132,10 +132,13 @@ public class BookingController {
     @Operation(summary = "Approve booking (Admin only)")
     public ResponseEntity<BookingDto> approveBooking(
             @PathVariable("id") Long id,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
+
         String adminEmail = authentication.getName();
-        return ResponseEntity.ok(bookingService.approveBooking(id, adminEmail));
+
+        return ResponseEntity.ok(
+                bookingService.approveBooking(id, adminEmail)
+        );
     }
 
     // Reject booking (Admin)
