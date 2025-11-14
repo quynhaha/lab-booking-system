@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -16,14 +17,20 @@ import java.util.Map;
 public class RootController {
 
     @GetMapping
-    @Operation(summary = "API Root - Redirects to Swagger UI")
-    public ResponseEntity<Map<String, Object>> root() {
-        Map<String, Object> response = new HashMap<>();
+    @Operation(summary = "API Root - Shows API information dynamically")
+    public ResponseEntity<Map<String, Object>> root(HttpServletRequest request) {
+
+        String domain = request.getRequestURL().toString();
+        if (domain.endsWith("/")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("message", "Lab Booking API is running!");
-        response.put("swagger_ui", "http://localhost:8080/swagger-ui.html");
-        response.put("api_docs", "http://localhost:8080/v3/api-docs");
-        response.put("health_check", "http://localhost:8080/api/health");
-        response.put("events_api", "http://localhost:8080/api/events");
+        response.put("swagger_ui", domain + "/swagger-ui.html");
+        response.put("api_docs", domain + "/v3/api-docs");
+        response.put("health_check", domain + "/api/health");
+        response.put("events_api", domain + "/api/events");
+
         return ResponseEntity.ok(response);
     }
 }
