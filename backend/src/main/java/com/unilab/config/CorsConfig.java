@@ -21,6 +21,7 @@ public class CorsConfig {
                 "https://lab-booking-system-fe.onrender.com",
                 "https://lab-booking-system.onrender.com",
                 "https://lab-booking-system-on5y.onrender.com"
+                "https://lab-booking-system-fe.onrender.com/"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
